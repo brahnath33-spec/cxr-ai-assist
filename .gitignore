@@ -1,0 +1,48 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ML
+*.pth
+*.onnx
+*.ckpt
+mlruns/
+wandb/
+
+# Data
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# Node
+node_modules/
+frontend/build/
+frontend/dist/
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets
+*.pem
+*.key
+kaggle.json
+
+# DICOM
+*.dcm
+!tests/fixtures/*.dcm
