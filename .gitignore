@@ -46,3 +46,15 @@ kaggle.json
 # DICOM
 *.dcm
 !tests/fixtures/*.dcm
+
+# Patient data (NEVER commit real medical data)
+data/*
+!data/raw/
+!data/processed/
+!data/anonymized/
+data/raw/*
+data/processed/*
+data/anonymized/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!data/anonymized/.gitkeep
