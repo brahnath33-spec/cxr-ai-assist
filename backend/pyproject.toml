@@ -28,8 +28,8 @@ pillow = "^10.2.0"
 numpy = "^1.26.3"
 
 [tool.poetry.group.ml.dependencies]
-torch = "^2.1.2"
-torchvision = "^0.16.2"
+torch = ">=2.6.0,<3.0.0"
+torchvision = ">=0.21.0,<1.0.0"
 onnxruntime = "^1.17.0"
 opencv-python-headless = "^4.9.0.80"
 pydicom = "^2.4.4"
