@@ -4,13 +4,22 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000,
-  headers: { 'Content-Type': 'application/json' },
+  timeout: 60000,
 });
 
 export const healthApi = {
   check: () => api.get('/health'),
   ready: () => api.get('/ready'),
+};
+
+export const predictionApi = {
+  predict: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/predict/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
 };
 
 export default api;
