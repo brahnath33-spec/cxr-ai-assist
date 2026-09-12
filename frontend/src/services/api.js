@@ -20,6 +20,14 @@ export const predictionApi = {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
+  explain: (file, targetLabel = null) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (targetLabel) formData.append('target_label', targetLabel);
+    return api.post('/predict/explain', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
 };
 
 export default api;
