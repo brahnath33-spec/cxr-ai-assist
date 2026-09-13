@@ -19,8 +19,9 @@ ALLOWED_CONTENT_TYPES = {
     "image/jpg",
     "image/png",
     "image/webp",
+    "application/dicom",
+    "application/octet-stream",
 }
-
 
 @router.post(
     "/explain",
