@@ -55,6 +55,17 @@ async def predict_xray(
             detail="Empty file.",
         )
 
+        # Validate input is a chest X-ray
+    from app.utils.validator import validate_bytes, ValidationError
+    try:
+        validate_bytes(contents)
+    except ValidationError as e:
+        logger.warning("validation_rejected", reason=str(e), filename=file.filename)
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(e),
+        )
+
     try:
         preprocessed, original_image = preprocess_bytes(contents)
         result = engine.predict(preprocessed)

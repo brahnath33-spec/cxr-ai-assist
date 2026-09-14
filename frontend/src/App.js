@@ -363,12 +363,31 @@ function NewStudy() {
               </div>
             )}
             {error && (
-              <div className="mt-4 flex items-start gap-2 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 animate-slide-up">
-                <span className="text-red-500 mt-0.5 flex-shrink-0"><I.Alert /></span>
-                <span>{error}</span>
-              </div>
-            )}
-          </div>
+  <div className="mt-4 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-xl overflow-hidden animate-slide-up">
+    <div className="flex items-center gap-3 px-4 py-3 border-b border-amber-200/70 bg-amber-100/50">
+      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-white shadow-md shadow-amber-500/20 flex-shrink-0">
+        <I.Alert />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-sm font-bold text-amber-900">Input Verification Failed</div>
+        <div className="text-[11px] text-amber-700 mt-0.5">Study cannot be processed for analysis</div>
+      </div>
+      <span className="text-[9px] font-mono uppercase tracking-widest text-amber-600 bg-amber-200/50 px-2 py-0.5 rounded">
+        CXR-VAL-01
+      </span>
+    </div>
+    <div className="px-4 py-3">
+      <p className="text-sm text-amber-900 leading-relaxed">{error}</p>
+    </div>
+    <div className="px-4 py-2 border-t border-amber-200/70 bg-white/40 flex items-start gap-2">
+      <div className="text-[10px] text-amber-700 leading-relaxed">
+        <span className="font-semibold">Reference:</span> CXR-AI Assist accepts PA/AP chest radiographs
+        in diagnostic grayscale (CR, DX, DR). Verify the study is a radiographic chest projection
+        and resubmit.
+      </div>
+    </div>
+  </div>
+)}          </div>
         </div>
 
         {/* RIGHT */}
