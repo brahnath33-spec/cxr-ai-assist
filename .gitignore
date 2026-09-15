@@ -10,6 +10,8 @@ venv/
 
 # ML
 *.pth
+!ml/models/best_cxrai_v4.pth
+!ml/models/training_history.json
 *.onnx
 *.ckpt
 mlruns/

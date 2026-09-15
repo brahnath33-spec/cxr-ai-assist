@@ -16,7 +16,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    APP_NAME: str = "CXR-AI Assist"
+    APP_NAME: str = "Navantix Pulmo"
     APP_ENV: str = "development"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = True

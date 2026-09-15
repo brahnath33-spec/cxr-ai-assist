@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { healthApi, predictionApi } from './services/api';
 
 // ============ ICONS ============
@@ -33,17 +33,22 @@ function Sidebar({ currentPage, onNavigate }) {
   return (
     <aside className="w-64 bg-gradient-to-b from-slate-900 via-slate-900 to-slate-800 text-slate-300 flex flex-col fixed h-full shadow-2xl">
       <div className="px-5 py-6 border-b border-slate-800/60">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-sky-400 to-sky-600 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-sky-500/30">
-            CXR
-          </div>
-          <div>
-            <div className="text-sm font-bold text-white leading-tight tracking-tight">CXR-AI Assist</div>
-            <div className="text-[10px] text-sky-400/80 uppercase tracking-widest font-medium mt-0.5">Clinical v1.0</div>
-          </div>
-        </div>
+  <div className="flex items-center gap-3">
+    <img src="/assets/mark.svg" alt="Navantix Pulmo" width="40" height="40" className="flex-shrink-0" />
+    <div className="min-w-0">
+      <div className="text-[13px] font-extrabold text-white leading-tight tracking-tight">
+        NAVANTIX
       </div>
-      <nav className="flex-1 px-3 py-5 space-y-1 overflow-y-auto">
+      <div className="text-[13px] font-extrabold leading-tight tracking-tight text-sky-400 -mt-0.5">
+        PULMO
+      </div>
+      <div className="flex items-center gap-1 mt-1.5">
+        <div className="w-2.5 h-[1.5px] bg-cyan-400 rounded-full"></div>
+        <div className="text-[9px] text-slate-500 uppercase tracking-widest font-semibold">Clinical v1.0</div>
+      </div>
+    </div>
+  </div>
+</div>      <nav className="flex-1 px-3 py-5 space-y-1 overflow-y-auto">
         <div className="px-3 mb-3 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Clinical</div>
         {items.map((item) => (
           <button key={item.id} onClick={() => !item.disabled && onNavigate(item.id)} disabled={item.disabled}
@@ -84,7 +89,7 @@ function TopBar({ apiStatus, currentPage }) {
   return (
     <header className="fixed top-0 left-64 right-0 h-16 glass border-b border-slate-200/80 flex items-center justify-between px-8 z-10 shadow-sm">
       <div className="flex items-center gap-3 text-sm">
-        <span className="text-slate-400 font-medium">CXR-AI Assist</span>
+        <span className="text-slate-400 font-medium">Navantix Pulmo</span>
         <span className="text-slate-300">/</span>
         <span className="text-slate-900 font-semibold">{label}</span>
       </div>
@@ -108,7 +113,7 @@ function TopBar({ apiStatus, currentPage }) {
           </div>
           <div className="text-xs leading-tight">
             <div className="font-semibold text-slate-900">Radiologist</div>
-            <div className="text-slate-500 text-[10px]">admin@cxrai.local</div>
+            <div className="text-slate-500 text-[10px]">admin@navantixpulmo.local</div>
           </div>
         </div>
       </div>
@@ -220,7 +225,7 @@ function Dashboard({ health, error }) {
         </div>
       </div>
       <div className="mt-8 flex items-center justify-between text-[10px] text-slate-400 font-mono">
-        <div>SESSION: LOCAL-DEV &middot; USER: admin@cxrai.local</div>
+        <div>SESSION: LOCAL-DEV &middot; USER: admin@navantixpulmo.local</div>
         <div>FOR INVESTIGATIONAL USE ONLY &middot; NOT FOR PRIMARY DIAGNOSIS</div>
       </div>
     </main>
@@ -381,7 +386,7 @@ function NewStudy() {
     </div>
     <div className="px-4 py-2 border-t border-amber-200/70 bg-white/40 flex items-start gap-2">
       <div className="text-[10px] text-amber-700 leading-relaxed">
-        <span className="font-semibold">Reference:</span> CXR-AI Assist accepts PA/AP chest radiographs
+        <span className="font-semibold">Reference:</span> Navantix Pulmo accepts PA/AP chest radiographs
         in diagnostic grayscale (CR, DX, DR). Verify the study is a radiographic chest projection
         and resubmit.
       </div>

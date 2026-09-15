@@ -1,0 +1,5 @@
+<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Navantix Pulmo">
+  <rect x="0" y="0" width="32" height="32" rx="7" fill="#0A1929"/>
+  <path d="M 9 24 L 9 8 L 12 8 L 19 17 L 19 8 L 22 8 L 22 24 L 19 24 L 12 15 L 12 24 Z" fill="#FFFFFF"/>
+  <circle cx="23" cy="8" r="1.8" fill="#00D9FF"/>
+</svg>
