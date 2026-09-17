@@ -1,3 +1,4 @@
+import ReportsPage from './pages/ReportsPage';
 import React, { useEffect, useState, useRef } from 'react';
 import { healthApi, predictionApi } from './services/api';
 
@@ -26,9 +27,7 @@ function Sidebar({ currentPage, onNavigate }) {
   const items = [
     { id: 'dashboard', icon: <I.Dashboard />, label: 'Dashboard' },
     { id: 'new-study', icon: <I.Scan />, label: 'New Study' },
-    { id: 'worklist', icon: <I.Folder />, label: 'Worklist', disabled: true },
-    { id: 'reports', icon: <I.Report />, label: 'Reports', disabled: true },
-    { id: 'settings', icon: <I.Settings />, label: 'Settings', disabled: true },
+    { id: 'reports', icon: <I.Report />, label: 'Reports' },
   ];
   return (
     <aside className="w-64 bg-gradient-to-b from-slate-900 via-slate-900 to-slate-800 text-slate-300 flex flex-col fixed h-full shadow-2xl">
@@ -85,7 +84,7 @@ function Sidebar({ currentPage, onNavigate }) {
 
 // ============ TOPBAR ============
 function TopBar({ apiStatus, currentPage }) {
-  const label = { 'dashboard': 'Dashboard', 'new-study': 'New Study' }[currentPage] || 'Worklist';
+  const label = { 'dashboard': 'Dashboard', 'new-study': 'New Study' }[currentPage] || 'Reports';
   return (
     <header className="fixed top-0 left-64 right-0 h-16 glass border-b border-slate-200/80 flex items-center justify-between px-8 z-10 shadow-sm">
       <div className="flex items-center gap-3 text-sm">
@@ -133,8 +132,8 @@ function Dashboard({ health, error }) {
     { code: 'CXR-MPD-01', name: 'Multi-Pathology Detection', status: 'Ready', coverage: '5 conditions' },
     { code: 'CXR-CTR-02', name: 'Cardiothoracic Ratio', status: 'Ready', coverage: 'Automated' },
     { code: 'CXR-GCM-03', name: 'Grad-CAM Explainability', status: 'Ready', coverage: 'Per-prediction' },
-    { code: 'CXR-RPT-04', name: 'Draft Report Generation', status: 'Pending', coverage: 'Structured text' },
-    { code: 'CXR-DCM-05', name: 'DICOM Ingestion', status: 'Pending', coverage: 'PACS-compatible' },
+    { code: 'CXR-RPT-04', name: 'Draft Report Generation', status: 'Ready', coverage: 'Structured text' },
+    { code: 'CXR-DCM-05', name: 'DICOM Ingestion', status: 'Ready', coverage: 'PACS-compatible' },
   ];
   const colorMap = {
     sky: 'from-sky-500 to-sky-600 shadow-sky-500/30',
@@ -489,7 +488,7 @@ function NewStudy() {
                 <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100">
                   {[
                     { k: 'MODEL', v: result.model_version },
-                    { k: 'DIMENSIONS', v: result.image_dimensions[0] + ' ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â ' + result.image_dimensions[1] },
+                    { k: 'DIMENSIONS', v: result.image_dimensions[0] + ' ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ' + result.image_dimensions[1] },
                     { k: 'INFERENCE', v: result.inference_time_ms + ' ms' },
                     { k: 'CONFIDENCE', v: (result.confidence * 100).toFixed(1) + '%' },
                   ].map((m, i) => (
@@ -524,6 +523,7 @@ function App() {
       <TopBar apiStatus={!!health} currentPage={currentPage} />
       {currentPage === 'dashboard' && <Dashboard health={health} error={error} />}
       {currentPage === 'new-study' && <NewStudy />}
+      {currentPage === 'reports' && <ReportsPage />}
     </div>
   );
 }
