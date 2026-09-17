@@ -285,7 +285,7 @@ function NewStudy() {
   };
   const handleReset = () => { setFile(null); setPreview(null); setResult(null); setExplainResult(null); setShowHeatmap(false); setTargetLabel(''); setError(null); };
 
-  const order = ['Cardiomegaly', 'Pleural Effusion', 'Consolidation', 'Atelectasis', 'Pneumothorax'];
+  const order = ['Tuberculosis', 'Pneumonia', 'Cardiomegaly', 'Pleural Effusion', 'Consolidation', 'Atelectasis', 'Pneumothorax', 'Normal'];
   const displayImage = showHeatmap && explainResult?.heatmap ? explainResult.heatmap : preview;
 
   const severityFor = (p) => {
@@ -489,7 +489,7 @@ function NewStudy() {
                 <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100">
                   {[
                     { k: 'MODEL', v: result.model_version },
-                    { k: 'DIMENSIONS', v: result.image_dimensions[0] + ' Ã— ' + result.image_dimensions[1] },
+                    { k: 'DIMENSIONS', v: result.image_dimensions[0] + ' ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â ' + result.image_dimensions[1] },
                     { k: 'INFERENCE', v: result.inference_time_ms + ' ms' },
                     { k: 'CONFIDENCE', v: (result.confidence * 100).toFixed(1) + '%' },
                   ].map((m, i) => (

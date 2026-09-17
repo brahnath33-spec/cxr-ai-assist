@@ -41,6 +41,7 @@ class Settings(BaseSettings):
     MINIO_BUCKET: str = "cxrai-images"
 
     MODEL_PATH: str = "/models/densenet121_chexpert.onnx"
+    LEGACY_MODEL_PATH: str = "ml/models/densenet121_chexpert_v1.onnx"
     CHECKPOINT_PATH: str = "ml/models/best_densenet121_chexpert.pth"
     INFERENCE_BATCH_SIZE: int = 1
     USE_GPU: bool = False
