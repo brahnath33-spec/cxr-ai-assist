@@ -3,6 +3,15 @@ import axios from 'axios';
 
 const API = process.env.REACT_APP_API_URL || 'http://localhost:8000/api/v1';
 
+const severityColor = (pct, label) => {
+  if (label === 'No TB/Pneumonia') {
+    return pct >= 50 ? 'text-emerald-700' : 'text-amber-700';
+  }
+  if (pct >= 50) return 'text-amber-700';
+  if (pct >= 30) return 'text-sky-700';
+  return 'text-slate-500';
+};
+
 function ReportsPage() {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -43,8 +52,6 @@ function ReportsPage() {
     return d.toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   };
 
-  const severityColor = (pct) => pct >= 50 ? 'text-amber-700' : pct >= 30 ? 'text-sky-700' : 'text-slate-500';
-
   return (
     <main className="ml-64 mt-16 p-8 bg-slate-50 min-h-screen">
       <div className="mb-6 flex items-center justify-between">
@@ -58,10 +65,13 @@ function ReportsPage() {
       </div>
 
       {error && (
-        <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>
+        <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+          {error}
+        </div>
       )}
 
       <div className="grid grid-cols-3 gap-6">
+        {/* LEFT: List */}
         <div className="col-span-2 bg-white border border-slate-200 rounded-xl overflow-hidden">
           <div className="px-5 py-3 border-b border-slate-200 bg-slate-50">
             <div className="grid grid-cols-12 gap-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
@@ -81,6 +91,7 @@ function ReportsPage() {
             )}
             {reports.map((r) => {
               const pct = (r.confidence * 100).toFixed(1);
+              const topLabel = r.top_finding || 'Unknown';
               return (
                 <div
                   key={r.id}
@@ -90,8 +101,8 @@ function ReportsPage() {
                   <div className="col-span-1 text-xs font-mono text-slate-400">#{r.id}</div>
                   <div className="col-span-5 text-xs text-slate-800 truncate font-mono">{r.filename}</div>
                   <div className="col-span-3">
-                    <span className={'text-xs font-semibold ' + severityColor(pct)}>{r.top_finding}</span>
-                    <span className={'text-[10px] font-mono ml-2 ' + severityColor(pct)}>{pct}%</span>
+                    <span className={'text-xs font-semibold ' + severityColor(pct, topLabel)}>{topLabel}</span>
+                    <span className={'text-[10px] font-mono ml-2 ' + severityColor(pct, topLabel)}>{pct}%</span>
                   </div>
                   <div className="col-span-2 text-[10px] text-slate-400 font-mono">{fmtDate(r.created_at)}</div>
                   <div className="col-span-1 text-right">
@@ -108,6 +119,7 @@ function ReportsPage() {
           </div>
         </div>
 
+        {/* RIGHT: Detail */}
         <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
           <div className="px-5 py-3 border-b border-slate-200 bg-slate-50">
             <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Report Detail</div>
@@ -124,12 +136,12 @@ function ReportsPage() {
                 )}
                 <div className="text-xs font-mono text-slate-500 truncate">{detail.filename}</div>
                 <div className="border-t border-slate-100 pt-3 space-y-1.5">
-                  {Object.entries(detail.predictions).map(([label, prob]) => {
+                  {Object.entries(detail.predictions).map(([predLabel, prob]) => {
                     const pct = (prob * 100).toFixed(1);
                     return (
-                      <div key={label} className="flex items-center justify-between text-xs">
-                        <span className="text-slate-700">{label}</span>
-                        <span className={'font-mono font-semibold ' + severityColor(pct)}>{pct}%</span>
+                      <div key={predLabel} className="flex items-center justify-between text-xs">
+                        <span className="text-slate-700">{predLabel}</span>
+                        <span className={'font-mono font-semibold ' + severityColor(pct, predLabel)}>{pct}%</span>
                       </div>
                     );
                   })}

@@ -12,10 +12,10 @@ from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-V4_LABELS = ["Tuberculosis", "Pneumonia", "Normal"]
+V4_LABELS = ["Tuberculosis", "Pneumonia", "No TB/Pneumonia"]
 V1_LABELS = ["Cardiomegaly", "Pleural Effusion", "Consolidation", "Atelectasis", "Pneumothorax"]
 ALL_LABELS = ["Tuberculosis", "Pneumonia", "Cardiomegaly", "Pleural Effusion",
-              "Consolidation", "Atelectasis", "Pneumothorax", "Normal"]
+              "Consolidation", "Atelectasis", "Pneumothorax", "No TB/Pneumonia"]
 
 
 class InferenceEngine:
@@ -89,7 +89,7 @@ class InferenceEngine:
             probs_v4 = self._run_session(self.session_v4, preprocessed)
             predictions["Tuberculosis"] = float(probs_v4[0])
             predictions["Pneumonia"] = float(probs_v4[1])
-            predictions["Normal"] = float(probs_v4[2])
+            predictions["No TB/Pneumonia"] = float(probs_v4[2])
 
         if self.session_v1 is not None:
             probs_v1 = self._run_session(self.session_v1, preprocessed)

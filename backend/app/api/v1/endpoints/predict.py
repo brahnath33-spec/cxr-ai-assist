@@ -1,4 +1,4 @@
-"""Chest X-ray prediction endpoint — saves every analysis to the reports DB."""
+"""Chest X-ray prediction endpoint — saves every analysis, excludes normal from flagged."""
 
 import base64
 import io
@@ -17,6 +17,7 @@ router = APIRouter(prefix="/predict", tags=["Prediction"])
 logger = get_logger(__name__)
 
 CLINICAL_THRESHOLD = 0.5
+NORMAL_LABEL = "No TB/Pneumonia"
 ALLOWED_CONTENT_TYPES = {
     "image/jpeg", "image/jpg", "image/png", "image/webp",
     "application/dicom", "application/octet-stream",
@@ -24,7 +25,6 @@ ALLOWED_CONTENT_TYPES = {
 
 
 def _make_preview(image: Image.Image, max_size: int = 512) -> str:
-    """Resize image to a small preview and return as data URL."""
     preview = image.copy()
     preview.thumbnail((max_size, max_size))
     if preview.mode != "RGB":
@@ -35,7 +35,6 @@ def _make_preview(image: Image.Image, max_size: int = 512) -> str:
 
 
 def _save_report(filename, result, flagged, dimensions, preview_url, heatmap_url=None):
-    """Persist a report to SQLite. Never raises — prediction should not fail on DB error."""
     try:
         db = SessionLocal()
         try:
@@ -85,9 +84,20 @@ async def predict_xray(
         logger.exception("prediction_failed", error=str(e))
         raise HTTPException(status_code=500, detail="Inference failed.")
 
-    flagged = [l for l, p in result["predictions"].items() if p >= CLINICAL_THRESHOLD]
+    # Flag only PATHOLOGICAL labels above threshold — never the "normal" verdict
+    flagged = [
+        label for label, prob in result["predictions"].items()
+        if prob >= CLINICAL_THRESHOLD and label != NORMAL_LABEL
+    ]
 
-    # Build preview and save to DB
+    logger.info(
+        "prediction_completed",
+        filename=file.filename,
+        flagged=flagged,
+        all_predictions=result["predictions"],
+        inference_time_ms=result["inference_time_ms"],
+    )
+
     try:
         preview_url = _make_preview(original_image)
         _save_report(
@@ -99,13 +109,6 @@ async def predict_xray(
         )
     except Exception as e:
         logger.exception("preview_failed", error=str(e))
-
-    logger.info(
-        "prediction_completed",
-        filename=file.filename,
-        flagged=flagged,
-        inference_time_ms=result["inference_time_ms"],
-    )
 
     return PredictionResponse(
         status="success",
