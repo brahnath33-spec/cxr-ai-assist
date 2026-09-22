@@ -1,4 +1,4 @@
-"""Chest X-ray prediction endpoint — saves every analysis, excludes normal from flagged."""
+"""Chest X-ray prediction endpoint - with CTR measurement."""
 
 import base64
 import io
@@ -6,8 +6,9 @@ import io
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from PIL import Image
 
-from app.api.v1.schemas.predict import PredictionResponse
+from app.api.v1.schemas.predict import CTRMeasurement, PredictionResponse
 from app.config import get_settings
+from app.core.ctr import measure_ctr
 from app.core.inference import InferenceEngine, get_inference_engine
 from app.core.preprocess import preprocess_bytes
 from app.db.database import Report, SessionLocal
@@ -34,25 +35,27 @@ def _make_preview(image: Image.Image, max_size: int = 512) -> str:
     return "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()
 
 
-def _save_report(filename, result, flagged, dimensions, preview_url, heatmap_url=None):
+def _save_report(filename, result, flagged, dimensions, preview_url, ctr_data=None):
     try:
         db = SessionLocal()
         try:
+            predictions = dict(result["predictions"])
+            if ctr_data is not None:
+                predictions["CTR"] = ctr_data["ctr"]
             report = Report(
                 filename=filename,
                 model_version=result["model_version"],
-                predictions=result["predictions"],
+                predictions=predictions,
                 confidence=result["confidence"],
                 flagged=flagged,
                 inference_time_ms=result["inference_time_ms"],
                 image_dimensions=list(dimensions),
                 image_data_url=preview_url,
-                heatmap_data_url=heatmap_url,
             )
             db.add(report)
             db.commit()
             db.refresh(report)
-            logger.info("report_saved", report_id=report.id, filename=filename)
+            logger.info("report_saved", report_id=report.id)
             return report.id
         finally:
             db.close()
@@ -84,19 +87,29 @@ async def predict_xray(
         logger.exception("prediction_failed", error=str(e))
         raise HTTPException(status_code=500, detail="Inference failed.")
 
-    # Flag only PATHOLOGICAL labels above threshold — never the "normal" verdict
+    # CTR measurement
+    ctr_result = None
+    ctr_data = None
+    try:
+        ctr_data = measure_ctr(original_image)
+        if ctr_data is not None:
+            ctr_result = CTRMeasurement(
+                ctr=ctr_data["ctr"],
+                interpretation=ctr_data["interpretation"],
+                heart_width_px=ctr_data["heart_width_px"],
+                thorax_width_px=ctr_data["thorax_width_px"],
+            )
+            if ctr_data["interpretation"] == "enlarged":
+                result["predictions"]["Cardiomegaly"] = max(result["predictions"].get("Cardiomegaly", 0.0), 0.85)
+            elif ctr_data["interpretation"] == "normal":
+                result["predictions"]["Cardiomegaly"] = min(result["predictions"].get("Cardiomegaly", 0.0), 0.15)
+    except Exception as e:
+        logger.exception("ctr_failed", error=str(e))
+
     flagged = [
         label for label, prob in result["predictions"].items()
         if prob >= CLINICAL_THRESHOLD and label != NORMAL_LABEL
     ]
-
-    logger.info(
-        "prediction_completed",
-        filename=file.filename,
-        flagged=flagged,
-        all_predictions=result["predictions"],
-        inference_time_ms=result["inference_time_ms"],
-    )
 
     try:
         preview_url = _make_preview(original_image)
@@ -106,9 +119,10 @@ async def predict_xray(
             flagged=flagged,
             dimensions=original_image.size,
             preview_url=preview_url,
+            ctr_data=ctr_data,
         )
-    except Exception as e:
-        logger.exception("preview_failed", error=str(e))
+    except Exception:
+        pass
 
     return PredictionResponse(
         status="success",
@@ -118,4 +132,5 @@ async def predict_xray(
         model_version=result["model_version"],
         inference_time_ms=result["inference_time_ms"],
         image_dimensions=list(original_image.size),
+        ctr=ctr_result,
     )

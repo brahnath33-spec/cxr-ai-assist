@@ -1,4 +1,4 @@
-"""Grad-CAM explain endpoint — auto-selects the most clinically relevant label."""
+"""Grad-CAM explain endpoint — validated input, smart label selection."""
 
 from typing import Optional
 
@@ -8,6 +8,7 @@ from app.api.v1.schemas.explain import ExplainResponse
 from app.config import get_settings
 from app.core.gradcam import GradCAMEngine, get_gradcam_engine
 from app.core.inference import InferenceEngine, get_inference_engine
+from app.core.input_validation import validate_chest_xray
 from app.core.preprocess import preprocess_bytes
 from app.utils.logger import get_logger
 
@@ -18,7 +19,6 @@ ALLOWED_CONTENT_TYPES = {
     "image/jpeg", "image/jpg", "image/png", "image/webp",
     "application/dicom", "application/octet-stream",
 }
-
 NORMAL_LABEL = "No TB/Pneumonia"
 PATHOLOGICAL_LABELS = [
     "Tuberculosis", "Pneumonia",
@@ -28,40 +28,20 @@ PATHOLOGICAL_LABELS = [
 
 
 def _pick_explain_label(predictions: dict, requested: Optional[str]) -> str:
-    """Choose which label to explain.
-
-    Rules:
-      1. If user requested a specific label → use it.
-      2. Else: pick the highest-scoring PATHOLOGICAL label with meaningful signal (>= 0.05).
-      3. Else: fall back to the "No TB/Pneumonia" label.
-    """
     if requested and requested in predictions:
         return requested
-
     pathological = {k: v for k, v in predictions.items() if k in PATHOLOGICAL_LABELS}
     if pathological:
-        top_label = max(pathological, key=pathological.get)
-        if pathological[top_label] >= 0.05:
-            return top_label
-
+        top = max(pathological, key=pathological.get)
+        if pathological[top] >= 0.05:
+            return top
     return NORMAL_LABEL
 
 
-@router.post(
-    "/explain",
-    response_model=ExplainResponse,
-    status_code=status.HTTP_200_OK,
-    summary="Analyze and explain a chest X-ray",
-    description=(
-        "Upload a chest X-ray and receive predictions plus a Grad-CAM heatmap "
-        "showing which regions of the image contributed to the prediction."
-    ),
-)
+@router.post("/explain", response_model=ExplainResponse, status_code=status.HTTP_200_OK)
 async def explain_xray(
     file: UploadFile = File(..., description="Chest X-ray image"),
-    target_label: Optional[str] = Form(
-        None, description="Pathology to explain (defaults to highest pathological confidence)"
-    ),
+    target_label: Optional[str] = Form(None),
     inference_engine: InferenceEngine = Depends(get_inference_engine),
     gradcam_engine: GradCAMEngine = Depends(get_gradcam_engine),
 ) -> ExplainResponse:
@@ -72,30 +52,36 @@ async def explain_xray(
 
     contents = await file.read()
     if len(contents) > settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024:
-        raise HTTPException(status_code=413, detail=f"File too large. Max {settings.MAX_UPLOAD_SIZE_MB} MB.")
+        raise HTTPException(status_code=413, detail="File too large.")
     if len(contents) == 0:
         raise HTTPException(status_code=400, detail="Empty file.")
 
     try:
         preprocessed, original_image = preprocess_bytes(contents)
-        result = inference_engine.predict(preprocessed)
     except Exception as e:
         logger.exception("explain_preprocess_failed", error=str(e))
+        raise HTTPException(status_code=400, detail="Could not read image file.")
+
+    # === INPUT VALIDATION ===
+    is_valid, reason = validate_chest_xray(original_image, filename=file.filename or "unknown")
+    if not is_valid:
+        logger.warning("explain_rejected", filename=file.filename, reason=reason)
+        raise HTTPException(status_code=400, detail=f"Not a chest X-ray: {reason}")
+
+    try:
+        result = inference_engine.predict(preprocessed)
+    except Exception as e:
+        logger.exception("explain_inference_failed", error=str(e))
         raise HTTPException(status_code=500, detail="Inference failed.")
 
     predictions = result["predictions"]
     chosen_label = _pick_explain_label(predictions, target_label)
-    logger.info("explain_label_chosen", requested=target_label, chosen=chosen_label, pred_value=predictions.get(chosen_label))
 
     heatmap_data = None
     if gradcam_engine.is_loaded:
         heatmap_data = gradcam_engine.generate(preprocessed, original_image, chosen_label)
-        if heatmap_data is None:
-            logger.warning("heatmap_generation_returned_none", label=chosen_label)
-    else:
-        logger.warning("gradcam_engine_not_loaded")
 
-    flagged = [label for label, prob in predictions.items() if prob >= 0.5 and label != NORMAL_LABEL]
+    flagged = [l for l, p in predictions.items() if p >= 0.5 and l != NORMAL_LABEL]
 
     return ExplainResponse(
         status="success",

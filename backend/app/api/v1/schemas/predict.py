@@ -1,22 +1,22 @@
-"""Request/response schemas for the prediction endpoint."""
+"""Prediction response schema with optional CTR measurement."""
 
-from typing import Dict, List
+from typing import Dict, List, Optional
+from pydantic import BaseModel
 
-from pydantic import BaseModel, Field
+
+class CTRMeasurement(BaseModel):
+    ctr: float
+    interpretation: str
+    heart_width_px: int
+    thorax_width_px: int
 
 
 class PredictionResponse(BaseModel):
-    """Response returned from /api/v1/predict."""
-
-    status: str = Field(..., description="'success' or 'error'")
-    predictions: Dict[str, float] = Field(
-        ..., description="Pathology name -> probability (0 to 1)"
-    )
-    confidence: float = Field(..., description="Max probability across labels")
-    flagged: List[str] = Field(
-        default_factory=list,
-        description="Labels above clinical threshold (0.5)",
-    )
+    status: str
+    predictions: Dict[str, float]
+    confidence: float
+    flagged: List[str]
     model_version: str
     inference_time_ms: float
-    image_dimensions: List[int] = Field(..., description="[width, height]")
+    image_dimensions: List[int]
+    ctr: Optional[CTRMeasurement] = None
