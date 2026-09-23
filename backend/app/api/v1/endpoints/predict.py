@@ -1,4 +1,4 @@
-"""Chest X-ray prediction endpoint - with CTR measurement."""
+"""Chest X-ray prediction endpoint - quality gate + CTR + per-label thresholds."""
 
 import base64
 import io
@@ -6,18 +6,19 @@ import io
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from PIL import Image
 
-from app.api.v1.schemas.predict import CTRMeasurement, PredictionResponse
+from app.api.v1.schemas.predict import CTRMeasurement, PredictionResponse, QualityCheck
 from app.config import get_settings
 from app.core.ctr import measure_ctr
 from app.core.inference import InferenceEngine, get_inference_engine
 from app.core.preprocess import preprocess_bytes
+from app.core.quality import check_image_quality
+from app.core.thresholds import CLINICAL_THRESHOLDS, get_threshold
 from app.db.database import Report, SessionLocal
 from app.utils.logger import get_logger
 
 router = APIRouter(prefix="/predict", tags=["Prediction"])
 logger = get_logger(__name__)
 
-CLINICAL_THRESHOLD = 0.5
 NORMAL_LABEL = "No TB/Pneumonia"
 ALLOWED_CONTENT_TYPES = {
     "image/jpeg", "image/jpg", "image/png", "image/webp",
@@ -80,8 +81,38 @@ async def predict_xray(
     if len(contents) == 0:
         raise HTTPException(status_code=400, detail="Empty file.")
 
+    # Preprocess FIRST so we have the image
     try:
         preprocessed, original_image = preprocess_bytes(contents)
+    except Exception as e:
+        logger.exception("preprocess_failed", error=str(e))
+        raise HTTPException(status_code=400, detail="Could not read image file.")
+
+    # Quality gate
+    quality_result = check_image_quality(original_image)
+    quality = QualityCheck(
+        suitable=quality_result["suitable"],
+        warnings=quality_result["warnings"],
+    )
+
+    # If not suitable, return early with no predictions
+    if not quality_result["suitable"]:
+        logger.warning("analysis_rejected_by_quality_gate", warnings=quality_result["warnings"])
+        return PredictionResponse(
+            status="rejected",
+            predictions={},
+            confidence=0.0,
+            flagged=[],
+            thresholds=CLINICAL_THRESHOLDS,
+            model_version="quality-gate",
+            inference_time_ms=0.0,
+            image_dimensions=list(original_image.size),
+            ctr=None,
+            quality=quality,
+        )
+
+    # Run inference
+    try:
         result = engine.predict(preprocessed)
     except Exception as e:
         logger.exception("prediction_failed", error=str(e))
@@ -99,18 +130,16 @@ async def predict_xray(
                 heart_width_px=ctr_data["heart_width_px"],
                 thorax_width_px=ctr_data["thorax_width_px"],
             )
-            if ctr_data["interpretation"] == "enlarged":
-                result["predictions"]["Cardiomegaly"] = max(result["predictions"].get("Cardiomegaly", 0.0), 0.85)
-            elif ctr_data["interpretation"] == "normal":
-                result["predictions"]["Cardiomegaly"] = min(result["predictions"].get("Cardiomegaly", 0.0), 0.15)
     except Exception as e:
         logger.exception("ctr_failed", error=str(e))
 
-    flagged = [
-        label for label, prob in result["predictions"].items()
-        if prob >= CLINICAL_THRESHOLD and label != NORMAL_LABEL
-    ]
+    # Per-label threshold flagging
+    flagged = []
+    for label, prob in result["predictions"].items():
+        if prob >= get_threshold(label):
+            flagged.append(label)
 
+    # Save report
     try:
         preview_url = _make_preview(original_image)
         _save_report(
@@ -124,13 +153,22 @@ async def predict_xray(
     except Exception:
         pass
 
+    logger.info(
+        "prediction_completed",
+        filename=file.filename,
+        flagged=flagged,
+        inference_time_ms=result["inference_time_ms"],
+    )
+
     return PredictionResponse(
         status="success",
         predictions=result["predictions"],
         confidence=result["confidence"],
         flagged=flagged,
+        thresholds=CLINICAL_THRESHOLDS,
         model_version=result["model_version"],
         inference_time_ms=result["inference_time_ms"],
         image_dimensions=list(original_image.size),
         ctr=ctr_result,
+        quality=quality,
     )

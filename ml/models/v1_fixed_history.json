@@ -1,0 +1,152 @@
+[
+  {
+    "epoch": 1,
+    "loss": 1.0839787080526353,
+    "mean_auc": 0.6391369814126221,
+    "Cardiomegaly": 0.639066464471636,
+    "Pleural Effusion": 0.7204042389636973,
+    "Consolidation": 0.6283758256631253,
+    "Atelectasis": 0.5957621391294861,
+    "Pneumothorax": 0.6120762388351654
+  },
+  {
+    "epoch": 2,
+    "loss": 1.078696084165573,
+    "mean_auc": 0.6417601742257044,
+    "Cardiomegaly": 0.6416847740175813,
+    "Pleural Effusion": 0.7275753086532564,
+    "Consolidation": 0.6293252604134232,
+    "Atelectasis": 0.595850026972476,
+    "Pneumothorax": 0.6143655010717854
+  },
+  {
+    "epoch": 3,
+    "loss": 1.076410189652443,
+    "mean_auc": 0.6447493370927256,
+    "Cardiomegaly": 0.6414322535011266,
+    "Pleural Effusion": 0.7284619478993075,
+    "Consolidation": 0.6273534772301727,
+    "Atelectasis": 0.6014608323281794,
+    "Pneumothorax": 0.6250381745048428
+  },
+  {
+    "epoch": 4,
+    "loss": 1.0529590331077576,
+    "mean_auc": 0.6844322877476107,
+    "Cardiomegaly": 0.6773551389599638,
+    "Pleural Effusion": 0.764905819208975,
+    "Consolidation": 0.6519186418230809,
+    "Atelectasis": 0.6564903656740391,
+    "Pneumothorax": 0.6714914730719942
+  },
+  {
+    "epoch": 5,
+    "loss": 1.0399695882558824,
+    "mean_auc": 0.6933926800265643,
+    "Cardiomegaly": 0.6853272853441648,
+    "Pleural Effusion": 0.7742436581735861,
+    "Consolidation": 0.6598273113377923,
+    "Atelectasis": 0.6623277095215871,
+    "Pneumothorax": 0.6852374357556908
+  },
+  {
+    "epoch": 6,
+    "loss": 1.0314573580026627,
+    "mean_auc": 0.6954491174255432,
+    "Cardiomegaly": 0.6880353501930409,
+    "Pleural Effusion": 0.7711331392340579,
+    "Consolidation": 0.6594975131504108,
+    "Atelectasis": 0.6685828994502464,
+    "Pneumothorax": 0.6899966850999593
+  },
+  {
+    "epoch": 7,
+    "loss": 1.0254927588701248,
+    "mean_auc": 0.6968623740909946,
+    "Cardiomegaly": 0.6937904066317113,
+    "Pleural Effusion": 0.771489222692939,
+    "Consolidation": 0.6641118335014758,
+    "Atelectasis": 0.6675096828158054,
+    "Pneumothorax": 0.6874107248130417
+  },
+  {
+    "epoch": 8,
+    "loss": 1.0171356533288956,
+    "mean_auc": 0.6937276551467843,
+    "Cardiomegaly": 0.6840238240045868,
+    "Pleural Effusion": 0.7709646634997037,
+    "Consolidation": 0.6584842464928778,
+    "Atelectasis": 0.674484643872399,
+    "Pneumothorax": 0.6806808978643539
+  },
+  {
+    "epoch": 9,
+    "loss": 1.0067836132764816,
+    "mean_auc": 0.6948126868860894,
+    "Cardiomegaly": 0.6916724494088207,
+    "Pleural Effusion": 0.7652619026678561,
+    "Consolidation": 0.6577743111343604,
+    "Atelectasis": 0.6755764230254027,
+    "Pneumothorax": 0.6837783481940076
+  },
+  {
+    "epoch": 10,
+    "loss": 0.995255409026146,
+    "mean_auc": 0.701461340007949,
+    "Cardiomegaly": 0.6960738083308996,
+    "Pleural Effusion": 0.7780923292712596,
+    "Consolidation": 0.6644359231443078,
+    "Atelectasis": 0.6770519538376681,
+    "Pneumothorax": 0.6916526854556102
+  },
+  {
+    "epoch": 11,
+    "loss": 0.9859765633583069,
+    "mean_auc": 0.6872052310074563,
+    "Cardiomegaly": 0.6628938181370014,
+    "Pleural Effusion": 0.7656545367945293,
+    "Consolidation": 0.6465842664208878,
+    "Atelectasis": 0.674459641296376,
+    "Pneumothorax": 0.686433892388487
+  },
+  {
+    "epoch": 12,
+    "loss": 0.9722244778394699,
+    "mean_auc": 0.6952756105391599,
+    "Cardiomegaly": 0.6708740023095245,
+    "Pleural Effusion": 0.7730109297918781,
+    "Consolidation": 0.6587081771267962,
+    "Atelectasis": 0.6769644448215877,
+    "Pneumothorax": 0.6968204986460131
+  },
+  {
+    "epoch": 13,
+    "loss": 0.9606691119670868,
+    "mean_auc": 0.6891802795737192,
+    "Cardiomegaly": 0.6690541130702476,
+    "Pleural Effusion": 0.7651105600590293,
+    "Consolidation": 0.6488936321704509,
+    "Atelectasis": 0.6732242867446949,
+    "Pneumothorax": 0.689618805824173
+  },
+  {
+    "epoch": 14,
+    "loss": 0.9507802332401276,
+    "mean_auc": 0.6869494647852614,
+    "Cardiomegaly": 0.6635495677009515,
+    "Pleural Effusion": 0.7614977549894517,
+    "Consolidation": 0.6484172281798669,
+    "Atelectasis": 0.6736705448440142,
+    "Pneumothorax": 0.6876122282120222
+  },
+  {
+    "epoch": 15,
+    "loss": 0.9424995568990707,
+    "mean_auc": 0.6878458510882004,
+    "Cardiomegaly": 0.6672181482543263,
+    "Pleural Effusion": 0.7628464175205627,
+    "Consolidation": 0.648093138537035,
+    "Atelectasis": 0.6729693362346424,
+    "Pneumothorax": 0.6881022148944353
+  }
+]
