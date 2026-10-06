@@ -29,6 +29,7 @@ numpy = "^1.26.3"
 onnx = "^1.23.0"
 onnxruntime = "^1.30.0"
 onnxscript = "^0.7.2"
+open-clip-torch = "^3.3.0"
 
 [tool.poetry.group.ml.dependencies]
 torch = ">=2.6.0,<3.0.0"

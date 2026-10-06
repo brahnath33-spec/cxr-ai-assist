@@ -32,22 +32,23 @@ function Sidebar({ currentPage, onNavigate }) {
   return (
     <aside className="w-64 bg-gradient-to-b from-slate-900 via-slate-900 to-slate-800 text-slate-300 flex flex-col fixed h-full shadow-2xl">
       <div className="px-5 py-6 border-b border-slate-800/60">
-  <div className="flex items-center gap-3">
-    <img src="/assets/mark.svg" alt="Navantix Pulmo" width="40" height="40" className="flex-shrink-0" />
-    <div className="min-w-0">
-      <div className="text-[13px] font-extrabold text-white leading-tight tracking-tight">
-        NAVANTIX
+        <div className="flex items-center gap-3">
+          <img src="/assets/mark.svg" alt="Navantix Pulmo" width="40" height="40" className="flex-shrink-0" />
+          <div className="min-w-0">
+            <div className="text-[13px] font-extrabold text-white leading-tight tracking-tight">
+              NAVANTIX
+            </div>
+            <div className="text-[13px] font-extrabold leading-tight tracking-tight text-sky-400 -mt-0.5">
+              PULMO
+            </div>
+            <div className="flex items-center gap-1 mt-1.5">
+              <div className="w-2.5 h-[1.5px] bg-cyan-400 rounded-full"></div>
+              <div className="text-[9px] text-slate-500 uppercase tracking-widest font-semibold">Clinical v1.0</div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div className="text-[13px] font-extrabold leading-tight tracking-tight text-sky-400 -mt-0.5">
-        PULMO
-      </div>
-      <div className="flex items-center gap-1 mt-1.5">
-        <div className="w-2.5 h-[1.5px] bg-cyan-400 rounded-full"></div>
-        <div className="text-[9px] text-slate-500 uppercase tracking-widest font-semibold">Clinical v1.0</div>
-      </div>
-    </div>
-  </div>
-</div>      <nav className="flex-1 px-3 py-5 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-3 py-5 space-y-1 overflow-y-auto">
         <div className="px-3 mb-3 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Clinical</div>
         {items.map((item) => (
           <button key={item.id} onClick={() => !item.disabled && onNavigate(item.id)} disabled={item.disabled}
@@ -124,8 +125,8 @@ function TopBar({ apiStatus, currentPage }) {
 function Dashboard({ health, error }) {
   const stats = [
     { label: 'Studies Today', value: 0, icon: <I.Activity />, sub: 'last 24 hours', color: 'sky' },
-    { label: 'Avg. Inference', value: '82', icon: <I.Clock />, sub: 'milliseconds', color: 'violet', suffix: 'ms' },
-    { label: 'Model AUC', value: '0.62', icon: <I.Trending />, sub: 'validation set', color: 'emerald' },
+    { label: 'Avg. Inference', value: '480', icon: <I.Clock />, sub: 'milliseconds', color: 'violet', suffix: 'ms' },
+    { label: 'Model AUC', value: '0.9793', icon: <I.Trending />, sub: 'v4 validation set', color: 'emerald' },
     { label: 'Active Sessions', value: 1, icon: <I.User />, sub: 'current user', color: 'amber' },
   ];
   const capabilities = [
@@ -251,6 +252,7 @@ function NewStudy() {
     if (f.type === 'application/octet-stream' && f.name && f.name.toLowerCase().endsWith('.dcm')) return true;
     return false;
   };
+
   const handleFile = (f) => {
     if (!f) return;
     const isImage = f.type && f.type.startsWith('image/');
@@ -259,36 +261,70 @@ function NewStudy() {
       setError('Please upload a JPEG, PNG, or DICOM (.dcm) file.');
       return;
     }
-    setFile(f); setResult(null); setExplainResult(null); setShowHeatmap(false); setError(null);
-    // DICOM can't be previewed in browser - show placeholder
+    setFile(f);
+    setResult(null);
+    setExplainResult(null);
+    setShowHeatmap(false);
+    setError(null);
     if (isDcm) {
       setPreview('dicom');
     } else {
       setPreview(URL.createObjectURL(f));
     }
   };
-  const handleDrop = (e) => { e.preventDefault(); if (e.dataTransfer.files?.[0]) handleFile(e.dataTransfer.files[0]); };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    if (e.dataTransfer.files?.[0]) handleFile(e.dataTransfer.files[0]);
+  };
+
   const handlePredict = async () => {
     if (!file) return;
-    setLoading(true); setError(null); setResult(null); setExplainResult(null); setShowHeatmap(false);
-    try { const res = await predictionApi.predict(file); setResult(res.data); }
-    catch (err) { setError(err.response?.data?.detail || err.message || 'Prediction failed'); }
-    finally { setLoading(false); }
+    setLoading(true);
+    setError(null);
+    setResult(null);
+    setExplainResult(null);
+    setShowHeatmap(false);
+    try {
+      const res = await predictionApi.predict(file);
+      setResult(res.data);
+    } catch (err) {
+      setError(err.response?.data?.detail || err.message || 'Prediction failed');
+    } finally {
+      setLoading(false);
+    }
   };
+
   const handleExplain = async () => {
     if (!file) return;
-    setExplaining(true); setError(null);
-    try { const res = await predictionApi.explain(file, targetLabel || null); setExplainResult(res.data); setShowHeatmap(true); }
-    catch (err) { setError(err.response?.data?.detail || err.message || 'Explanation failed'); }
-    finally { setExplaining(false); }
+    setExplaining(true);
+    setError(null);
+    try {
+      const res = await predictionApi.explain(file, targetLabel || null);
+      setExplainResult(res.data);
+      setShowHeatmap(true);
+    } catch (err) {
+      setError(err.response?.data?.detail || err.message || 'Explanation failed');
+    } finally {
+      setExplaining(false);
+    }
   };
-  const handleReset = () => { setFile(null); setPreview(null); setResult(null); setExplainResult(null); setShowHeatmap(false); setTargetLabel(''); setError(null); };
+
+  const handleReset = () => {
+    setFile(null);
+    setPreview(null);
+    setResult(null);
+    setExplainResult(null);
+    setShowHeatmap(false);
+    setTargetLabel('');
+    setError(null);
+  };
 
   const order = ['Tuberculosis', 'Pneumonia', 'Cardiomegaly', 'Pleural Effusion', 'Consolidation', 'Atelectasis', 'Pneumothorax', 'No TB/Pneumonia'];
   const displayImage = showHeatmap && explainResult?.heatmap ? explainResult.heatmap : preview;
+  const isRejected = result && result.model_version === 'modality-gate';
 
   const severityFor = (p, label) => {
-    // Special case: 'No TB/Pneumonia' high = GOOD NEWS = green
     if (label === 'No TB/Pneumonia') {
       if (p >= 0.5) return { color: 'from-emerald-500 to-emerald-600', label: 'CLEAR', text: 'text-emerald-700' };
       return { color: 'from-amber-400 to-amber-500', label: 'UNCERTAIN', text: 'text-amber-700' };
@@ -313,25 +349,26 @@ function NewStudy() {
           </div>
           <div className="p-6">
             {!preview ? (
-  <div onClick={() => inputRef.current?.click()} onDrop={handleDrop} onDragOver={(e) => e.preventDefault()}
-    className="border-2 border-dashed border-slate-300 rounded-xl py-20 flex flex-col items-center justify-center cursor-pointer hover:border-sky-500 hover:bg-gradient-to-b hover:from-sky-50/50 hover:to-white transition-all duration-300 group">
-    <div className="text-slate-300 group-hover:text-sky-500 group-hover:scale-110 transition-all duration-300 mb-4"><I.Upload /></div>
-    <div className="text-base font-semibold text-slate-700 group-hover:text-sky-700">Drop chest X-ray here</div>
-    <div className="text-xs text-slate-500 mt-1">or click to browse &middot; JPEG / PNG / DICOM</div>
-    <input ref={inputRef} type="file" accept="image/jpeg,image/jpg,image/png,image/webp,.dcm,application/dicom" className="hidden" onChange={(e) => handleFile(e.target.files[0])} />
-  </div>
-) : (
+              <div onClick={() => inputRef.current?.click()} onDrop={handleDrop} onDragOver={(e) => e.preventDefault()}
+                className="border-2 border-dashed border-slate-300 rounded-xl py-20 flex flex-col items-center justify-center cursor-pointer hover:border-sky-500 hover:bg-gradient-to-b hover:from-sky-50/50 hover:to-white transition-all duration-300 group">
+                <div className="text-slate-300 group-hover:text-sky-500 group-hover:scale-110 transition-all duration-300 mb-4"><I.Upload /></div>
+                <div className="text-base font-semibold text-slate-700 group-hover:text-sky-700">Drop chest X-ray here</div>
+                <div className="text-xs text-slate-500 mt-1">or click to browse &middot; JPEG / PNG / DICOM</div>
+                <input ref={inputRef} type="file" accept="image/jpeg,image/jpg,image/png,image/webp,.dcm,application/dicom" className="hidden" onChange={(e) => handleFile(e.target.files[0])} />
+              </div>
+            ) : (
               <div className="animate-fade-in">
-               <div className="relative rounded-xl overflow-hidden bg-slate-900 border border-slate-200 shadow-lg">
-  {preview === 'dicom' && !showHeatmap ? (
-    <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-      <I.File />
-      <div className="mt-3 text-sm">DICOM file loaded</div>
-      <div className="text-xs mt-1 text-slate-500">Click "Run AI Analysis" to process</div>
-    </div>
-  ) : (
-    <img src={displayImage} alt="Chest X-ray" className="w-full h-auto max-h-[28rem] object-contain transition-opacity duration-500" />
-  )}                  {showHeatmap && (
+                <div className="relative rounded-xl overflow-hidden bg-slate-900 border border-slate-200 shadow-lg">
+                  {preview === 'dicom' && !showHeatmap ? (
+                    <div className="flex flex-col items-center justify-center py-20 text-slate-400">
+                      <I.File />
+                      <div className="mt-3 text-sm">DICOM file loaded</div>
+                      <div className="text-xs mt-1 text-slate-500">Click "Run AI Analysis" to process</div>
+                    </div>
+                  ) : (
+                    <img src={displayImage} alt="Chest X-ray" className="w-full h-auto max-h-[28rem] object-contain transition-opacity duration-500" />
+                  )}
+                  {showHeatmap && (
                     <div className="absolute top-3 left-3 flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-rose-500 to-rose-600 text-white text-[11px] font-bold rounded-full shadow-lg shadow-rose-500/30">
                       <I.Sparkles />
                       <span className="tracking-wide">GRAD-CAM ACTIVE</span>
@@ -372,31 +409,32 @@ function NewStudy() {
               </div>
             )}
             {error && (
-  <div className="mt-4 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-xl overflow-hidden animate-slide-up">
-    <div className="flex items-center gap-3 px-4 py-3 border-b border-amber-200/70 bg-amber-100/50">
-      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-white shadow-md shadow-amber-500/20 flex-shrink-0">
-        <I.Alert />
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="text-sm font-bold text-amber-900">Input Verification Failed</div>
-        <div className="text-[11px] text-amber-700 mt-0.5">Study cannot be processed for analysis</div>
-      </div>
-      <span className="text-[9px] font-mono uppercase tracking-widest text-amber-600 bg-amber-200/50 px-2 py-0.5 rounded">
-        CXR-VAL-01
-      </span>
-    </div>
-    <div className="px-4 py-3">
-      <p className="text-sm text-amber-900 leading-relaxed">{error}</p>
-    </div>
-    <div className="px-4 py-2 border-t border-amber-200/70 bg-white/40 flex items-start gap-2">
-      <div className="text-[10px] text-amber-700 leading-relaxed">
-        <span className="font-semibold">Reference:</span> Navantix Pulmo accepts PA/AP chest radiographs
-        in diagnostic grayscale (CR, DX, DR). Verify the study is a radiographic chest projection
-        and resubmit.
-      </div>
-    </div>
-  </div>
-)}          </div>
+              <div className="mt-4 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-xl overflow-hidden animate-slide-up">
+                <div className="flex items-center gap-3 px-4 py-3 border-b border-amber-200/70 bg-amber-100/50">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-white shadow-md shadow-amber-500/20 flex-shrink-0">
+                    <I.Alert />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-bold text-amber-900">Input Verification Failed</div>
+                    <div className="text-[11px] text-amber-700 mt-0.5">Study cannot be processed for analysis</div>
+                  </div>
+                  <span className="text-[9px] font-mono uppercase tracking-widest text-amber-600 bg-amber-200/50 px-2 py-0.5 rounded">
+                    CXR-VAL-01
+                  </span>
+                </div>
+                <div className="px-4 py-3">
+                  <p className="text-sm text-amber-900 leading-relaxed">{error}</p>
+                </div>
+                <div className="px-4 py-2 border-t border-amber-200/70 bg-white/40 flex items-start gap-2">
+                  <div className="text-[10px] text-amber-700 leading-relaxed">
+                    <span className="font-semibold">Reference:</span> Navantix Pulmo accepts PA/AP chest radiographs
+                    in diagnostic grayscale (CR, DX, DR). Verify the study is a radiographic chest projection
+                    and resubmit.
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* RIGHT */}
@@ -427,7 +465,43 @@ function NewStudy() {
                 </div>
               </div>
             )}
-            {result && (
+
+            {/* REJECTION CARD */}
+            {isRejected && (
+              <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-xl overflow-hidden animate-fade-in">
+                <div className="flex items-center gap-3 px-5 py-4 border-b border-amber-200/70 bg-amber-100/60">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-white shadow-md flex-shrink-0">
+                    <I.Alert />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-base font-bold text-amber-900">Image Rejected</div>
+                    <div className="text-[11px] text-amber-700 mt-0.5">Not a valid chest radiograph</div>
+                  </div>
+                  <span className="text-[9px] font-mono uppercase tracking-widest text-amber-700 bg-amber-200/60 px-2 py-1 rounded">
+                    CXR-VAL-02
+                  </span>
+                </div>
+                <div className="px-5 py-4">
+                  <p className="text-sm text-amber-900 leading-relaxed mb-3">
+                    The uploaded image did not pass chest X-ray modality verification. Navantix Pulmo only analyzes PA/AP chest radiographs.
+                  </p>
+                  <div className="bg-white/70 border border-amber-200/60 rounded-lg px-3 py-2.5">
+                    <div className="text-[10px] uppercase tracking-widest text-amber-600 font-bold mb-1">Detected as</div>
+                    <div className="text-xs font-mono text-amber-900">
+                      {result?.quality?.warnings?.[0] || 'Non-radiographic image'}
+                    </div>
+                  </div>
+                </div>
+                <div className="px-5 py-3 border-t border-amber-200/70 bg-white/40">
+                  <div className="text-[10px] text-amber-700 leading-relaxed">
+                    <span className="font-semibold">Accepted inputs:</span> PA/AP chest radiographs in diagnostic grayscale (CR, DX, DR). MRI, CT, ultrasound, and photographs are not supported.
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* NORMAL FINDINGS */}
+            {result && !isRejected && (
               <div className="space-y-5 animate-fade-in">
                 <div className={
                   'flex items-center gap-3 px-4 py-3.5 rounded-xl border font-semibold text-sm ' +
@@ -493,7 +567,7 @@ function NewStudy() {
                 <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100">
                   {[
                     { k: 'MODEL', v: result.model_version },
-                    { k: 'DIMENSIONS', v: result.image_dimensions[0] + ' ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ' + result.image_dimensions[1] },
+                    { k: 'DIMENSIONS', v: result.image_dimensions[0] + ' x ' + result.image_dimensions[1] },
                     { k: 'INFERENCE', v: result.inference_time_ms + ' ms' },
                     { k: 'CONFIDENCE', v: (result.confidence * 100).toFixed(1) + '%' },
                   ].map((m, i) => (
@@ -521,7 +595,9 @@ function App() {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [health, setHealth] = useState(null);
   const [error, setError] = useState(null);
-  useEffect(() => { healthApi.check().then((r) => setHealth(r.data)).catch((e) => setError(e.message || 'Network Error')); }, []);
+  useEffect(() => {
+    healthApi.check().then((r) => setHealth(r.data)).catch((e) => setError(e.message || 'Network Error'));
+  }, []);
   return (
     <div className="min-h-screen bg-slate-50">
       <Sidebar currentPage={currentPage} onNavigate={setCurrentPage} />

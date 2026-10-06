@@ -33,18 +33,17 @@ model.eval()
 dummy = torch.randn(1, 3, 224, 224)
 
 # Export to ONNX
-print(f"\nExporting to ONNX (opset 13)...")
+print(f"\nExporting to ONNX (opset 17)...")
 torch.onnx.export(
     model,
     dummy,
     str(ONNX_PATH),
     input_names=["input"],
     output_names=["logits"],
-    dynamic_axes={"input": {0: "batch"}, "logits": {0: "batch"}},
-    opset_version=13,
+    opset_version=17,
     do_constant_folding=True,
+    dynamo=False,
 )
-
 size_mb = ONNX_PATH.stat().st_size / (1024 * 1024)
 print(f"\n✅ ONNX exported: {size_mb:.1f} MB")
 print(f"   Path: {ONNX_PATH}")

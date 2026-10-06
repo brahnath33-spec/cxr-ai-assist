@@ -1,4 +1,4 @@
-"""Chest X-ray prediction endpoint - quality gate + CTR + per-label thresholds."""
+"""Chest X-ray prediction endpoint — modality gate + quality gate + CTR + per-label thresholds."""
 
 import base64
 import io
@@ -12,6 +12,7 @@ from app.core.ctr import measure_ctr
 from app.core.inference import InferenceEngine, get_inference_engine
 from app.core.preprocess import preprocess_bytes
 from app.core.quality import check_image_quality
+from app.core.modality import check_modality
 from app.core.thresholds import CLINICAL_THRESHOLDS, get_threshold
 from app.db.database import Report, SessionLocal
 from app.utils.logger import get_logger
@@ -25,7 +26,13 @@ ALLOWED_CONTENT_TYPES = {
     "application/dicom", "application/octet-stream",
 }
 
+MODALITY_GATE_VERSION = "modality-gate"
+QUALITY_GATE_VERSION = "quality-gate"
 
+
+# ------------------------------------------------------------
+# HELPERS
+# ------------------------------------------------------------
 def _make_preview(image: Image.Image, max_size: int = 512) -> str:
     preview = image.copy()
     preview.thumbnail((max_size, max_size))
@@ -65,6 +72,32 @@ def _save_report(filename, result, flagged, dimensions, preview_url, ctr_data=No
         return None
 
 
+def _rejection_response(
+    reason: str,
+    model_version: str,
+    image_dimensions,
+) -> PredictionResponse:
+    """Build a clean rejection response. Used by both gates."""
+    return PredictionResponse(
+        status="rejected",
+        predictions={},
+        confidence=0.0,
+        flagged=[],
+        thresholds=CLINICAL_THRESHOLDS,
+        model_version=model_version,
+        inference_time_ms=0.0,
+        image_dimensions=list(image_dimensions),
+        ctr=None,
+        quality=QualityCheck(
+            suitable=False,
+            warnings=[reason],
+        ),
+    )
+
+
+# ------------------------------------------------------------
+# ENDPOINT
+# ------------------------------------------------------------
 @router.post("/", response_model=PredictionResponse, status_code=status.HTTP_200_OK)
 async def predict_xray(
     file: UploadFile = File(..., description="Chest X-ray image"),
@@ -72,8 +105,12 @@ async def predict_xray(
 ) -> PredictionResponse:
     settings = get_settings()
 
+    # -------- Input validation --------
     if file.content_type and file.content_type not in ALLOWED_CONTENT_TYPES:
-        raise HTTPException(status_code=400, detail=f"Unsupported file type: {file.content_type}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file type: {file.content_type}",
+        )
 
     contents = await file.read()
     if len(contents) > settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024:
@@ -81,44 +118,54 @@ async def predict_xray(
     if len(contents) == 0:
         raise HTTPException(status_code=400, detail="Empty file.")
 
-    # Preprocess FIRST so we have the image
+    # -------- Preprocess --------
     try:
         preprocessed, original_image = preprocess_bytes(contents)
     except Exception as e:
         logger.exception("preprocess_failed", error=str(e))
         raise HTTPException(status_code=400, detail="Could not read image file.")
 
-    # Quality gate
+    # -------- Modality gate (rejects non-CXR: MRI, CT, ultrasound, photos) --------
+    modality_result = check_modality(original_image)
+    if not modality_result["is_cxr"]:
+        logger.warning(
+            "analysis_rejected_by_modality_gate",
+            reason=modality_result["reason"],
+            cxr_score=modality_result["cxr_score"],
+            best_match=modality_result["best_non_cxr"],
+        )
+        return _rejection_response(
+            reason=modality_result["reason"],
+            model_version=MODALITY_GATE_VERSION,
+            image_dimensions=original_image.size,
+        )
+
+    # -------- Quality gate (resolution, contrast, histogram, edges) --------
     quality_result = check_image_quality(original_image)
     quality = QualityCheck(
         suitable=quality_result["suitable"],
         warnings=quality_result["warnings"],
     )
 
-    # If not suitable, return early with no predictions
     if not quality_result["suitable"]:
-        logger.warning("analysis_rejected_by_quality_gate", warnings=quality_result["warnings"])
-        return PredictionResponse(
-            status="rejected",
-            predictions={},
-            confidence=0.0,
-            flagged=[],
-            thresholds=CLINICAL_THRESHOLDS,
-            model_version="quality-gate",
-            inference_time_ms=0.0,
-            image_dimensions=list(original_image.size),
-            ctr=None,
-            quality=quality,
+        logger.warning(
+            "analysis_rejected_by_quality_gate",
+            warnings=quality_result["warnings"],
+        )
+        return _rejection_response(
+            reason=quality_result["warnings"][0] if quality_result["warnings"] else "Image quality insufficient for analysis.",
+            model_version=QUALITY_GATE_VERSION,
+            image_dimensions=original_image.size,
         )
 
-    # Run inference
+    # -------- Inference --------
     try:
         result = engine.predict(preprocessed)
     except Exception as e:
         logger.exception("prediction_failed", error=str(e))
         raise HTTPException(status_code=500, detail="Inference failed.")
 
-    # CTR measurement
+    # -------- CTR measurement --------
     ctr_result = None
     ctr_data = None
     try:
@@ -133,13 +180,13 @@ async def predict_xray(
     except Exception as e:
         logger.exception("ctr_failed", error=str(e))
 
-    # Per-label threshold flagging
+    # -------- Per-label threshold flagging --------
     flagged = []
     for label, prob in result["predictions"].items():
         if prob >= get_threshold(label):
             flagged.append(label)
 
-    # Save report
+    # -------- Save report (best-effort, non-fatal) --------
     try:
         preview_url = _make_preview(original_image)
         _save_report(
@@ -160,6 +207,7 @@ async def predict_xray(
         inference_time_ms=result["inference_time_ms"],
     )
 
+    # -------- Success response --------
     return PredictionResponse(
         status="success",
         predictions=result["predictions"],
